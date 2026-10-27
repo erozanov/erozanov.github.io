@@ -2,8 +2,8 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
-// Замените на реальный домен сайта — он нужен для sitemap и Open Graph.
+// Домен сайта — нужен для sitemap, Open Graph и канонических ссылок.
 export default defineConfig({
-  site: 'https://sledom.blog',
+  site: 'https://erozanov.github.io',
   integrations: [sitemap()],
 });
