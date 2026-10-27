@@ -20,3 +20,11 @@ Consult these guides before working on related tasks:
 - [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+
+## Publishing notes from Obsidian
+
+Notes with photos are published to the blog via `scripts/publish-note.mjs`
+(run it on the machine where the Obsidian vault is synced). The expected note
+format, the agent's preparation steps, and the script's environment variables
+are described in `PUBLISHING.md` — read it before publishing or changing the
+pipeline.
