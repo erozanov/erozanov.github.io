@@ -1,0 +1,69 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import GalleryDialog from './GalleryDialog.astro';
+import type { GallerySlide } from './GalleryDialog.astro';
+
+interface Props {
+  trips: CollectionEntry<'trips'>[];
+  moments: CollectionEntry<'moments'>[];
+}
+
+const { trips, moments } = Astro.props;
+const tripById = new Map(trips.map((trip) => [trip.id, trip]));
+
+const galleryId = 'best-gallery';
+const slides: GallerySlide[] = moments
+  .flatMap((moment) =>
+    moment.data.media
+      .filter((item) => item.best)
+      .map((item) => {
+        const trip = tripById.get(moment.data.trip.id);
+        return {
+          href: `/trips/${moment.data.trip.id}/#${moment.id}`,
+          eyebrow: `${trip?.data.title ?? ''} · ${moment.data.city}`,
+          date: moment.data.date,
+          title: moment.data.title,
+          bodyHtml: '',
+          media: [item],
+        };
+      }),
+  )
+  .sort((a, b) => b.date.valueOf() - a.date.valueOf());
+---
+
+{slides.length > 0 && (
+  <section class="best-moments section-shell" aria-labelledby="best-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Фотогалерея</p>
+        <h2 id="best-title">Лучшие кадры <em>архива.</em></h2>
+      </div>
+      <p class="section-description">Кадры и ролики, к которым хочется возвращаться. Нажмите, чтобы листать всю подборку.</p>
+    </div>
+
+    <div class="best-grid">
+      {slides.map((slide, index) => {
+        const item = slide.media[0]!;
+        return (
+          <button
+            type="button"
+            class="best-item"
+            data-dialog-target={galleryId}
+            data-slide-index={index}
+            aria-label={`${slide.title}: открыть в галерее`}
+          >
+            {item.type === 'video' ? (
+              <video src={item.src} poster={item.poster} preload="metadata" muted></video>
+            ) : (
+              <img src={item.src} alt={item.alt} width="1600" height="1200" loading="lazy" decoding="async" />
+            )}
+            <span class="best-item-tag">{slide.eyebrow}</span>
+            {item.type === 'video' && <span class="best-play" aria-hidden="true">▶</span>}
+          </button>
+        );
+      })}
+    </div>
+
+    <GalleryDialog id={galleryId} slides={slides} />
+  </section>
+)}

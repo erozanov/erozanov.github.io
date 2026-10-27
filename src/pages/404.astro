@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+
+<BaseLayout title="Страница не найдена — Следом" description="Такого маршрута нет в нашем архиве.">
+  <SiteHeader />
+  <main id="main-content">
+    <section class="not-found section-shell" aria-labelledby="not-found-title">
+      <p class="eyebrow">Ошибка 404</p>
+      <h1 id="not-found-title">Такого маршрута<br /><em>нет в архиве.</em></h1>
+      <p>Возможно, страница переехала или ссылка ведёт не туда. Но в архиве есть куда пойти.</p>
+      <div class="about-actions">
+        <a class="button button-accent" href="/">На главную <span aria-hidden="true">→</span></a>
+        <a class="button button-outline" href="/map/">Открыть карту</a>
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

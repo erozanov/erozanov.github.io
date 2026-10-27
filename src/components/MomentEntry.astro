@@ -1,0 +1,92 @@
+---
+import { getEntry, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import { formatDate } from '../utils/dates';
+import TravelMap from './TravelMap.astro';
+
+interface Props {
+  moment: CollectionEntry<'moments'>;
+  index: number;
+  galleryId: string;
+  slideIndex: number;
+}
+
+const { moment, index, galleryId, slideIndex } = Astro.props;
+const { Content } = await render(moment);
+const media = moment.data.media;
+const videos = media.filter((item) => item.type === 'video');
+const photos = media.filter((item) => item.type === 'photo');
+const hasText = Boolean(moment.body?.trim());
+const isTextOnly = media.length === 0;
+const visiblePhotos = photos.slice(0, 3);
+const hiddenCount = photos.length - visiblePhotos.length;
+const trip = await getEntry('trips', moment.data.trip.id);
+const place = trip?.data.cities.find((city) => city.slug === moment.data.citySlug);
+---
+
+<article class:list={['moment-entry', { 'moment-entry--text': isTextOnly }]} id={moment.id}>
+  {media.length > 0 && (
+    <div class="moment-entry-media">
+      <div class="moment-gallery">
+        {videos.map((video, videoIndex) => (
+          <div class="moment-gallery-item moment-gallery-video">
+            <video src={video.src} poster={video.poster} preload="metadata" controls></video>
+            <button
+              type="button"
+              class="moment-gallery-expand"
+              data-dialog-target={galleryId}
+              data-slide-index={slideIndex}
+              data-media-index={videoIndex}
+              aria-label={`${moment.data.title}: открыть в галерее`}
+            >
+              ⤢
+            </button>
+          </div>
+        ))}
+        {visiblePhotos.map((photo, photoIndex) => (
+          <button
+            type="button"
+            class="moment-gallery-item"
+            data-dialog-target={galleryId}
+            data-slide-index={slideIndex}
+            data-media-index={videos.length + photoIndex}
+            aria-label={`${moment.data.title}: открыть фото ${photoIndex + 1} из ${photos.length}`}
+          >
+            <img src={photo.src} alt={photo.alt} width="1600" height="1200" loading="lazy" decoding="async" />
+            {hiddenCount > 0 && photoIndex === visiblePhotos.length - 1 && (
+              <span class="moment-gallery-more" aria-hidden="true">+{hiddenCount}</span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+  <div class="moment-entry-copy">
+    <p class="eyebrow">{moment.data.city} · {formatDate(moment.data.date, true)}</p>
+    <h3>{moment.data.title}</h3>
+    {hasText && <div class="moment-prose"><Content /></div>}
+    {moment.data.tags.length > 0 && (
+      <p class="moment-tags">
+        {moment.data.tags.map((tag) => (
+          <a class="moment-tag" href={`/tags/${encodeURIComponent(tag)}/`}>#{tag}</a>
+        ))}
+      </p>
+    )}
+    {isTextOnly && (
+      <button
+        type="button"
+        class="text-link moment-gallery-open"
+        data-dialog-target={galleryId}
+        data-slide-index={slideIndex}
+      >
+        Открыть в галерее <span aria-hidden="true">→</span>
+      </button>
+    )}
+    {place && (
+      <div class="moment-map">
+        <TravelMap markers={[{ lat: place.coordinates.lat, lng: place.coordinates.lng, label: place.name }]} zoom={11} />
+      </div>
+    )}
+    <span class="moment-entry-index">Момент {String(index).padStart(2, '0')}</span>
+  </div>
+</article>

@@ -1,0 +1,97 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatDate } from '../utils/dates';
+
+interface Props {
+  trips: CollectionEntry<'trips'>[];
+  moments: CollectionEntry<'moments'>[];
+}
+
+const { trips, moments } = Astro.props;
+const tripById = new Map(trips.map((trip) => [trip.id, trip]));
+const topics = [
+  { slug: 'еда', label: 'Вкусная еда' },
+  { slug: 'море', label: 'Море' },
+  { slug: 'город', label: 'Город' },
+  { slug: 'архитектура', label: 'Архитектура' },
+  { slug: 'природа', label: 'Природа' },
+  { slug: 'вечер', label: 'Вечер' },
+];
+const taggedMoments = moments.filter((moment) => moment.data.tags.length > 0);
+---
+
+<section class="topic-moments section-shell" id="collections" aria-labelledby="collections-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Темы и связи</p>
+      <h2 id="collections-title">Еда, море и городские огни.<br /><em>Всё связано.</em></h2>
+    </div>
+    <p class="section-description">Заметки объединяются не только по поездкам, но и по впечатлениям. Откройте тему, чтобы попасть сразу в нужный момент.</p>
+  </div>
+
+  <div class="topic-panel" data-topic-root>
+    <div class="topic-toolbar">
+      <div class="topic-filters" role="group" aria-label="Фильтр моментов по темам">
+        <button type="button" data-topic-filter="all" aria-pressed="true">Все темы <span>{taggedMoments.length}</span></button>
+        {topics.map((topic) => {
+          const count = taggedMoments.filter((moment) => moment.data.tags.includes(topic.slug)).length;
+          return <button type="button" data-topic-filter={topic.slug} aria-pressed="false">{topic.label} <span>{count}</span></button>;
+        })}
+      </div>
+      <p class="topic-status" data-topic-status aria-live="polite">Показано {taggedMoments.length} из {taggedMoments.length} моментов</p>
+    </div>
+
+    <div class="topic-grid">
+      {taggedMoments.map((moment) => {
+        const cover = moment.data.media[0];
+        const trip = tripById.get(moment.data.trip.id);
+        const primaryTopic = topics.find((topic) => moment.data.tags.includes(topic.slug));
+        return (
+          <a
+            class="topic-card"
+            href={`/trips/${moment.data.trip.id}/#${moment.id}`}
+            data-topic-card
+            data-topics={moment.data.tags.join(' ')}
+          >
+            <div class="topic-image">
+              {cover?.type === 'video'
+                ? cover.poster
+                  ? <img src={cover.poster} alt={cover.alt} width="1600" height="1200" loading="lazy" decoding="async" />
+                  : <span class="note-mark" aria-hidden="true">▶</span>
+                : cover
+                  ? <img src={cover.src} alt={cover.alt} width="1600" height="1200" loading="lazy" decoding="async" />
+                  : <span class="note-mark" aria-hidden="true">✎</span>}
+              <span class="topic-label">{primaryTopic?.label}</span>
+              <span class="topic-open" aria-hidden="true">↗</span>
+            </div>
+            <div class="topic-copy">
+              <p class="topic-meta">{trip?.data.title} · {moment.data.city} · {formatDate(moment.data.date)}</p>
+              <h3>{moment.data.title}</h3>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-topic-root]').forEach((root) => {
+    const filters = root.querySelectorAll<HTMLButtonElement>('[data-topic-filter]');
+    const cards = root.querySelectorAll<HTMLElement>('[data-topic-card]');
+    const status = root.querySelector<HTMLElement>('[data-topic-status]');
+
+    filters.forEach((filterButton) => {
+      filterButton.addEventListener('click', () => {
+        const selectedTopic = filterButton.dataset.topicFilter ?? 'all';
+        filters.forEach((button) => button.setAttribute('aria-pressed', String(button === filterButton)));
+        cards.forEach((card) => {
+          card.hidden = selectedTopic !== 'all' && !card.dataset.topics?.split(' ').includes(selectedTopic);
+        });
+
+        const visibleCount = Array.from(cards).filter((card) => !card.hidden).length;
+        if (status) status.textContent = `Показано ${visibleCount} из ${cards.length} моментов`;
+      });
+    });
+  });
+</script>

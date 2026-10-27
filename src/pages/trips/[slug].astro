@@ -1,0 +1,162 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import MomentEntry from '../../components/MomentEntry.astro';
+import GalleryDialog from '../../components/GalleryDialog.astro';
+import { formatDateRange, pluralize, tripDuration } from '../../utils/dates';
+
+interface Props {
+  trip: CollectionEntry<'trips'>;
+  moments: CollectionEntry<'moments'>[];
+}
+
+export async function getStaticPaths() {
+  const trips = await getCollection('trips', ({ data }) => data.status === 'published');
+  const moments = await getCollection('moments', ({ data }) => data.status === 'published');
+
+  return trips.map((trip) => ({
+    params: { slug: trip.id },
+    props: {
+      trip,
+      moments: moments.filter((moment) => moment.data.trip.id === trip.id),
+    },
+  }));
+}
+
+const { trip, moments } = Astro.props;
+const { Content } = await render(trip);
+const sortedMoments = [...moments].sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+const duration = tripDuration(trip.data.startDate, trip.data.endDate);
+const galleryId = `gallery-${trip.id}`;
+const gallerySlides = sortedMoments.map((moment, index) => ({
+  href: `/trips/${trip.id}/#${moment.id}`,
+  eyebrow: `Момент ${String(index + 1).padStart(2, '0')} · ${moment.data.city}`,
+  date: moment.data.date,
+  title: moment.data.title,
+  bodyHtml: moment.rendered?.html ?? '',
+  media: moment.data.media,
+}));
+const citySections = trip.data.cities.map((city) => ({
+  ...city,
+  moments: sortedMoments.filter((moment) => moment.data.citySlug === city.slug),
+}));
+const dayNav = sortedMoments.map((moment, index) => ({
+  id: moment.id,
+  label: `День ${index + 1}`,
+  city: moment.data.city,
+}));
+const mediaStats = sortedMoments.reduce(
+  (acc, moment) => {
+    for (const item of moment.data.media) {
+      if (item.type === 'video') acc.videos += 1;
+      else acc.photos += 1;
+    }
+    return acc;
+  },
+  { photos: 0, videos: 0 },
+);
+---
+
+<BaseLayout title={`${trip.data.title} — Следом`} description={trip.data.summary} image={trip.data.cover}>
+  <SiteHeader />
+  <main id="main-content" class="trip-page">
+    <section class="trip-hero" aria-labelledby="trip-title">
+      <img src={trip.data.cover} alt={trip.data.coverAlt} width="1600" height="1200" loading="eager" fetchpriority="high" />
+      <div class="trip-hero-overlay"></div>
+      <div class="trip-hero-content section-shell">
+        <a class="back-link" href="/#journeys">← На главную</a>
+        <div class="trip-hero-copy">
+          <p class="eyebrow light">Путешествие {trip.data.number} · {trip.data.country}</p>
+          <h1 id="trip-title">{trip.data.title}<span>.</span></h1>
+          <p>{trip.data.summary}</p>
+          <div class="trip-hero-meta">
+            <span>{formatDateRange(trip.data.startDate, trip.data.endDate)}</span>
+            <span>{duration} {pluralize(duration, 'день', 'дня', 'дней')}</span>
+            <span>{sortedMoments.length} {pluralize(sortedMoments.length, 'заметка', 'заметки', 'заметок')}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="trip-route-nav section-shell" aria-label="Города в этой поездке">
+      <span>Маршрут</span>
+      <ol>
+        {trip.data.cities.map((city, index) => (
+          <li><a href={`#${city.slug}`}><span>{String(index + 1).padStart(2, '0')}</span>{city.name}</a></li>
+        ))}
+      </ol>
+    </nav>
+
+    <section class="trip-intro section-shell">
+      <p class="eyebrow">Об этой поездке</p>
+      <div class="trip-intro-prose"><Content /></div>
+    </section>
+
+    {dayNav.length > 1 && (
+      <nav class="trip-day-nav" aria-label="Навигация по дням">
+        <div class="trip-day-nav-track section-shell">
+          <span>Дни</span>
+          <ol>
+            {dayNav.map((day) => (
+              <li><a href={`#${day.id}`}>{day.label} · {day.city}</a></li>
+            ))}
+          </ol>
+        </div>
+      </nav>
+    )}
+
+    {citySections.map((city, cityIndex) => (
+      <section class="trip-city section-shell" id={city.slug} aria-labelledby={`city-title-${city.slug}`}>
+        <div class="trip-city-heading">
+          <span>Глава {String(cityIndex + 1).padStart(2, '0')}</span>
+          <h2 id={`city-title-${city.slug}`}>{city.name}</h2>
+          <p>{city.tagline}</p>
+        </div>
+        <div class="trip-moments">
+          {city.moments.length > 0 ? city.moments.map((moment) => (
+            <MomentEntry
+              moment={moment}
+              index={sortedMoments.indexOf(moment) + 1}
+              galleryId={galleryId}
+              slideIndex={sortedMoments.indexOf(moment)}
+            />
+          )) : <p class="city-empty">Заметки для этой главы ещё не добавлены.</p>}
+        </div>
+      </section>
+    ))}
+
+    <GalleryDialog id={galleryId} slides={gallerySlides} />
+
+    <section class="trip-stats section-shell" aria-label="Итоги поездки">
+      <div class="trip-stats-item">
+        <strong>{duration}</strong>
+        <span>{pluralize(duration, 'день', 'дня', 'дней')}</span>
+      </div>
+      <div class="trip-stats-item">
+        <strong>{trip.data.cities.length}</strong>
+        <span>{pluralize(trip.data.cities.length, 'город', 'города', 'городов')}</span>
+      </div>
+      <div class="trip-stats-item">
+        <strong>{sortedMoments.length}</strong>
+        <span>{pluralize(sortedMoments.length, 'заметка', 'заметки', 'заметок')}</span>
+      </div>
+      <div class="trip-stats-item">
+        <strong>{mediaStats.photos}</strong>
+        <span>{pluralize(mediaStats.photos, 'фотография', 'фотографии', 'фотографий')}</span>
+      </div>
+      <div class="trip-stats-item">
+        <strong>{mediaStats.videos}</strong>
+        <span>{pluralize(mediaStats.videos, 'видео', 'видео', 'видео')}</span>
+      </div>
+    </section>
+
+    <div class="trip-end section-shell">
+      <p>Конец этой истории.<br /><em>Начало следующей.</em></p>
+      <a class="button button-outline" href="/#collections">К темам впечатлений <span aria-hidden="true">→</span></a>
+    </div>
+  </main>
+  <SiteFooter />
+</BaseLayout>

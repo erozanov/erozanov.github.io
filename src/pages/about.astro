@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
+// Замените текст и фото на настоящую историю семьи — это страница, которой доверяют читатели.
+---
+
+<BaseLayout title="Кто пишет — Следом" description="Немного о семье, которая собирает этот архив путешествий.">
+  <SiteHeader />
+  <main id="main-content">
+    <section class="about-page section-shell" aria-labelledby="about-page-title">
+      <div class="about-copy">
+        <p class="eyebrow">Кто пишет</p>
+        <h1 id="about-page-title">Привет! Мы — семья, которая <em>следом.</em></h1>
+        <div class="about-prose">
+          <p>
+            Этот архив начался просто: после поездок оставались фотографии в телефонах и впечатления,
+            которые быстро забывались. Мы решили записывать всё как есть — без глянца, зато настоящее:
+            усталые вечера, случайные открытия и места, куда хочется вернуться.
+          </p>
+          <p>
+            Путешествуем вдвоём и с детьми, поэтому маршруты у нас не гоночные. Много гуляем пешком,
+            останавливаемся там, где вкусно пахнет, и всегда оставляем место для дня без плана.
+          </p>
+          <p>
+            Если наши заметки помогут вам собрать свой маршрут или просто захочется в дорогу —
+            значит, архив работает.
+          </p>
+        </div>
+        <div class="about-actions">
+          <a class="button button-accent" href="/#journeys">Читать архив <span aria-hidden="true">→</span></a>
+          <a class="button button-outline" href="/map/">Карта путешествий</a>
+        </div>
+      </div>
+      <figure class="about-photo">
+        <img src="/media/altai.jpg" alt="Семья на фоне горной долины" width="1600" height="1200" loading="lazy" decoding="async" />
+        <figcaption>Где-то посередине маршрута. Как всегда.</figcaption>
+      </figure>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

@@ -1,0 +1,77 @@
+---
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import { formatDate, pluralize } from '../../utils/dates';
+
+interface Props {
+  tag: string;
+  moments: CollectionEntry<'moments'>[];
+  trips: CollectionEntry<'trips'>[];
+}
+
+export async function getStaticPaths() {
+  const moments = await getCollection('moments', ({ data }) => data.status === 'published');
+  const trips = await getCollection('trips', ({ data }) => data.status === 'published');
+  const tags = [...new Set(moments.flatMap((moment) => moment.data.tags))];
+
+  return tags.map((tag) => ({
+    params: { tag },
+    props: {
+      tag,
+      moments: moments.filter((moment) => moment.data.tags.includes(tag)),
+      trips,
+    },
+  }));
+}
+
+const { tag, moments, trips } = Astro.props;
+const tripById = new Map(trips.map((trip) => [trip.id, trip]));
+const sorted = [...moments].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title={`#${tag} — Следом`} description={`Все заметки по теме «${tag}» из семейного архива путешествий.`}>
+  <SiteHeader />
+  <main id="main-content">
+    <section class="tag-page section-shell" aria-labelledby="tag-title">
+      <p class="eyebrow">Тема</p>
+      <h1 id="tag-title">#{tag}<span>.</span></h1>
+      <p class="tag-count">{sorted.length} {pluralize(sorted.length, 'запись', 'записи', 'записей')}</p>
+
+      <div class="topic-grid tag-grid">
+        {sorted.map((moment) => {
+          const cover = moment.data.media[0];
+          const trip = tripById.get(moment.data.trip.id);
+          return (
+            <a
+              class="topic-card"
+              href={`/trips/${moment.data.trip.id}/#${moment.id}`}
+              aria-label={`Открыть: ${moment.data.title}`}
+            >
+              <div class="topic-image">
+                {cover?.type === 'video'
+                  ? cover.poster
+                    ? <img src={cover.poster} alt={cover.alt} width="1600" height="1200" loading="lazy" decoding="async" />
+                    : <span class="note-mark" aria-hidden="true">▶</span>
+                  : cover
+                    ? <img src={cover.src} alt={cover.alt} width="1600" height="1200" loading="lazy" decoding="async" />
+                    : <span class="note-mark" aria-hidden="true">✎</span>}
+                <span class="topic-label">{moment.data.city}</span>
+                <span class="topic-open" aria-hidden="true">↗</span>
+              </div>
+              <div class="topic-copy">
+                <p class="topic-meta">{trip?.data.title} · {formatDate(moment.data.date)}</p>
+                <h3>{moment.data.title}</h3>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+
+      <a class="text-link tag-back" href="/#collections">Все темы <span aria-hidden="true">→</span></a>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

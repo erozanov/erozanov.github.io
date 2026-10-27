@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+
+<BaseLayout title="Поиск по архиву — Следом" description="Поиск по заметкам, городам и впечатлениям семейного архива.">
+  <SiteHeader />
+  <main id="main-content">
+    <section class="search-page section-shell" aria-labelledby="search-title">
+      <p class="eyebrow">Поиск</p>
+      <h1 id="search-title">Найти в <em>архиве.</em></h1>
+      <p class="search-hint">Ищем по заметкам, городам, темам и подписям к фотографиям.</p>
+      <div id="search" class="search-box"></div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>
+
+<link rel="stylesheet" href="/pagefind/pagefind-ui.css" />
+<script is:inline src="/pagefind/pagefind-ui.js"></script>
+<script is:inline>
+  window.addEventListener('DOMContentLoaded', () => {
+    if (window.PagefindUI) {
+      new window.PagefindUI({ element: '#search', showSubResults: true, excerptLength: 40 });
+    } else {
+      const box = document.getElementById('search');
+      if (box) box.textContent = 'Поиск доступен на собранной версии сайта: npm run build && npm run preview';
+    }
+  });
+</script>

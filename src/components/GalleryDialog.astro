@@ -1,0 +1,251 @@
+---
+import { formatDate } from '../utils/dates';
+
+export interface GallerySlideMedia {
+  type: 'photo' | 'video';
+  src: string;
+  alt: string;
+  poster?: string;
+}
+
+export interface GallerySlide {
+  href: string;
+  eyebrow: string;
+  date: Date;
+  title: string;
+  bodyHtml: string;
+  media: GallerySlideMedia[];
+}
+
+interface Props {
+  id: string;
+  slides: GallerySlide[];
+}
+
+const { id, slides } = Astro.props;
+---
+
+<dialog class="moment-dialog gallery-dialog" {id} aria-label="Галерея записей">
+  <div class="moment-dialog-frame">
+    <form method="dialog" class="dialog-close-form">
+      <button class="dialog-close" aria-label="Закрыть галерею">×</button>
+    </form>
+
+    <div class="gallery-slides">
+      {slides.map((slide, slideIndex) => {
+        const hasText = slide.bodyHtml.trim().length > 0;
+        return (
+          <div
+            class:list={[
+              'gallery-slide',
+              { 'is-text-only': slide.media.length === 0, 'is-media-only': slide.media.length > 0 && !hasText },
+            ]}
+            data-slide
+            aria-hidden={slideIndex === 0 ? undefined : 'true'}
+          >
+            {slide.media.length > 0 && (
+              <div class="dialog-media">
+                {slide.media.map((item, mediaIndex) =>
+                  item.type === 'video' ? (
+                    <video
+                      src={item.src}
+                      poster={item.poster}
+                      controls
+                      preload="metadata"
+                      class={mediaIndex === 0 ? 'is-active' : undefined}
+                      aria-hidden={mediaIndex === 0 ? undefined : 'true'}
+                    />
+                  ) : (
+                    <img
+                      src={item.src}
+                      alt={item.alt}
+                      width="1600"
+                      height="1200"
+                      loading="lazy"
+                      decoding="async"
+                      class={mediaIndex === 0 ? 'is-active' : undefined}
+                      aria-hidden={mediaIndex === 0 ? undefined : 'true'}
+                    />
+                  ),
+                )}
+                {slide.media.length > 1 && (
+                  <div class="gallery-media-nav">
+                    <button type="button" class="gallery-media-arrow" data-media-prev aria-label="Предыдущий файл">←</button>
+                    <span class="gallery-media-counter" data-media-counter>1 / {slide.media.length}</span>
+                    <button type="button" class="gallery-media-arrow" data-media-next aria-label="Следующий файл">→</button>
+                  </div>
+                )}
+              </div>
+            )}
+            {hasText ? (
+              <div class="dialog-copy">
+                <p class="eyebrow">{slide.eyebrow}</p>
+                <p class="dialog-date">{formatDate(slide.date, true)}</p>
+                <h3>{slide.title}</h3>
+                <div class="moment-prose" set:html={slide.bodyHtml} />
+                <div class="dialog-actions">
+                  <a class="text-link" href={slide.href}>
+                    Открыть в хронологии <span aria-hidden="true">→</span>
+                  </a>
+                  <button type="button" class="text-link gallery-share" data-share={slide.href}>
+                    <span class="gallery-share-label">Поделиться <span aria-hidden="true">↗</span></span>
+                    <span class="gallery-share-done" hidden>Ссылка скопирована <span aria-hidden="true">✓</span></span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div class="gallery-slide-caption">
+                <p class="eyebrow">{slide.eyebrow}</p>
+                <h3>{slide.title}</h3>
+                <button type="button" class="text-link gallery-share" data-share={slide.href}>
+                  <span class="gallery-share-label">Поделиться <span aria-hidden="true">↗</span></span>
+                  <span class="gallery-share-done" hidden>Ссылка скопирована <span aria-hidden="true">✓</span></span>
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
+    {slides.length > 1 && (
+      <div class="dialog-nav">
+        <button type="button" class="dialog-arrow" data-slide-prev aria-label="Предыдущая запись">←</button>
+        <button type="button" class="dialog-arrow" data-slide-next aria-label="Следующая запись">→</button>
+        <span class="dialog-counter" data-slide-counter>1 / {slides.length}</span>
+      </div>
+    )}
+  </div>
+</dialog>
+
+<script>
+  function syncDialogState() {
+    document.body.classList.toggle('dialog-open', Boolean(document.querySelector('dialog[open]')));
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-share]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const url = new URL(button.dataset.share ?? '/', window.location.origin).toString();
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.append(input);
+        input.select();
+        document.execCommand('copy');
+        input.remove();
+      }
+      const label = button.querySelector<HTMLElement>('.gallery-share-label');
+      const done = button.querySelector<HTMLElement>('.gallery-share-done');
+      if (label && done) {
+        label.hidden = true;
+        done.hidden = false;
+        setTimeout(() => {
+          label.hidden = false;
+          done.hidden = true;
+        }, 2000);
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLDialogElement>('.gallery-dialog').forEach((dialog) => {
+    const slides = Array.from(dialog.querySelectorAll<HTMLElement>('[data-slide]'));
+    const counter = dialog.querySelector<HTMLElement>('[data-slide-counter]');
+    let slideIndex = 0;
+
+    interface MediaState {
+      items: HTMLElement[];
+      index: number;
+      counter: HTMLElement | null;
+    }
+
+    const mediaStates = new Map<HTMLElement, MediaState>();
+
+    function setMedia(slide: HTMLElement, index: number) {
+      const state = mediaStates.get(slide);
+      if (!state || state.items.length === 0) return;
+      state.index = (index + state.items.length) % state.items.length;
+      state.items.forEach((item, itemIndex) => {
+        item.classList.toggle('is-active', itemIndex === state.index);
+        item.setAttribute('aria-hidden', String(itemIndex !== state.index));
+      });
+      if (state.counter) state.counter.textContent = `${state.index + 1} / ${state.items.length}`;
+    }
+
+    slides.forEach((slide) => {
+      const items = Array.from(slide.querySelectorAll<HTMLElement>('.dialog-media > *'));
+      mediaStates.set(slide, { items, index: 0, counter: slide.querySelector<HTMLElement>('[data-media-counter]') });
+      slide.querySelector('[data-media-prev]')?.addEventListener('click', () => {
+        setMedia(slide, (mediaStates.get(slide)?.index ?? 0) - 1);
+      });
+      slide.querySelector('[data-media-next]')?.addEventListener('click', () => {
+        setMedia(slide, (mediaStates.get(slide)?.index ?? 0) + 1);
+      });
+    });
+
+    function showSlide(next: number, mediaIndex?: number) {
+      if (slides.length === 0) return;
+      slideIndex = (next + slides.length) % slides.length;
+      slides.forEach((slide, index) => {
+        slide.classList.toggle('is-active', index === slideIndex);
+        slide.setAttribute('aria-hidden', String(index !== slideIndex));
+        if (index !== slideIndex) slide.querySelectorAll('video').forEach((video) => video.pause());
+      });
+      if (counter) counter.textContent = `${slideIndex + 1} / ${slides.length}`;
+      dialog.classList.toggle('is-video', slides[slideIndex]!.querySelector('video') !== null);
+      if (mediaIndex !== undefined) {
+        const state = mediaStates.get(slides[slideIndex]!);
+        if (state) setMedia(slides[slideIndex]!, mediaIndex - state.index);
+      }
+    }
+
+    dialog.querySelector('[data-slide-prev]')?.addEventListener('click', () => showSlide(slideIndex - 1));
+    dialog.querySelector('[data-slide-next]')?.addEventListener('click', () => showSlide(slideIndex + 1));
+
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') showSlide(slideIndex - 1);
+      if (event.key === 'ArrowRight') showSlide(slideIndex + 1);
+    });
+
+    let touchX: number | null = null;
+    dialog.addEventListener('touchstart', (event) => {
+      touchX = event.touches[0]?.clientX ?? null;
+    }, { passive: true });
+    dialog.addEventListener('touchend', (event) => {
+      if (touchX === null) return;
+      const delta = (event.changedTouches[0]?.clientX ?? touchX) - touchX;
+      if (Math.abs(delta) > 48) showSlide(slideIndex + (delta < 0 ? 1 : -1));
+      touchX = null;
+    }, { passive: true });
+
+    dialog.addEventListener('close', () => {
+      showSlide(0);
+      syncDialogState();
+    });
+
+    dialog.addEventListener('click', (event) => {
+      if (event.target !== dialog) return;
+      const bounds = dialog.getBoundingClientRect();
+      const inside =
+        event.clientX >= bounds.left &&
+        event.clientX <= bounds.right &&
+        event.clientY >= bounds.top &&
+        event.clientY <= bounds.bottom;
+      if (!inside) dialog.close();
+    });
+
+    document.querySelectorAll<HTMLButtonElement>(`[data-dialog-target="${dialog.id}"]`).forEach((button) => {
+      button.addEventListener('click', () => {
+        if (dialog.open) return;
+        const slide = Number.parseInt(button.dataset.slideIndex ?? '0', 10) || 0;
+        const media = button.dataset.mediaIndex !== undefined
+          ? Number.parseInt(button.dataset.mediaIndex, 10)
+          : undefined;
+        showSlide(slide, media);
+        dialog.showModal();
+        syncDialogState();
+      });
+    });
+  });
+</script>

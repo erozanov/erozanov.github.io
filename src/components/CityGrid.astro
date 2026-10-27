@@ -1,0 +1,33 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  trip: CollectionEntry<'trips'>;
+}
+
+const { trip } = Astro.props;
+---
+
+<section class="city-section section-shell" id="cities" aria-labelledby="cities-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Маршрут последней поездки</p>
+      <h2 id="cities-title">Четыре города.<br /><em>Четыре настроения.</em></h2>
+    </div>
+    <p class="section-description">От тёплого моря до вечерних небоскрёбов. Каждый город — своя глава общей истории.</p>
+  </div>
+
+  <div class="city-grid">
+    {trip.data.cities.map((city, index) => (
+      <a class="city-card" href={`/trips/${trip.id}/#${city.slug}`}>
+        <div class="city-image">
+          <img src={city.image} alt={city.imageAlt} width="1600" height="1200" loading="lazy" decoding="async" />
+          <span class="city-number">{String(index + 1).padStart(2, '0')}</span>
+          <span class="city-arrow" aria-hidden="true">↗</span>
+        </div>
+        <h3>{city.name}</h3>
+        <p>{city.tagline}</p>
+      </a>
+    ))}
+  </div>
+</section>

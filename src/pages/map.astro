@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import TravelMap from '../components/TravelMap.astro';
+import { formatDateRange } from '../utils/dates';
+
+const trips = (await getCollection('trips', ({ data }) => data.status === 'published')).sort(
+  (a, b) => b.data.startDate.valueOf() - a.data.startDate.valueOf(),
+);
+
+const markers = trips.flatMap((trip) =>
+  trip.data.cities.map((city) => ({
+    lat: city.coordinates.lat,
+    lng: city.coordinates.lng,
+    label: city.name,
+    popup: [
+      `<strong>${city.name}</strong>`,
+      `<span>${trip.data.title} · ${formatDateRange(trip.data.startDate, trip.data.endDate)}</span>`,
+      `<a href="/trips/${trip.id}/#${city.slug}">Открыть поездку <span aria-hidden="true">→</span></a>`,
+    ].join('<br>'),
+  })),
+);
+---
+
+<BaseLayout title="Карта путешествий — Следом" description="Все города и места из семейного архива на одной карте." image={trips[0]?.data.cover ?? '/media/china-hero.jpg'}>
+  <SiteHeader />
+  <main id="main-content">
+    <section class="map-page section-shell" aria-labelledby="map-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Карта</p>
+          <h1 id="map-title">Где мы <em>были.</em></h1>
+        </div>
+        <p class="section-description">Все города и места из архива на одной карте. Нажмите на точку, чтобы перейти к поездке.</p>
+      </div>
+
+      <TravelMap class="map-page-canvas" markers={markers} fit />
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

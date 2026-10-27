@@ -1,0 +1,108 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatDateRange, pluralize } from '../utils/dates';
+
+interface Props {
+  trips: CollectionEntry<'trips'>[];
+  moments: CollectionEntry<'moments'>[];
+}
+
+const { trips, moments } = Astro.props;
+
+const tripsByYear = new Map<number, CollectionEntry<'trips'>[]>();
+for (const trip of trips) {
+  const year = trip.data.startDate.getUTCFullYear();
+  const list = tripsByYear.get(year) ?? [];
+  list.push(trip);
+  tripsByYear.set(year, list);
+}
+const years = [...tripsByYear.keys()];
+
+const momentCount = (trip: CollectionEntry<'trips'>) =>
+  moments.filter((moment) => moment.data.trip.id === trip.id).length;
+---
+
+<section class="journey-shelf section-shell" id="journeys" aria-labelledby="journeys-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Travel archive</p>
+      <h2 id="journeys-title">Архив <em>путешествий.</em></h2>
+    </div>
+    <p class="section-description">Все маршруты по годам — от свежих до давних. Каждая карточка ведёт в полную историю с заметками и фотографиями.</p>
+  </div>
+
+  <div class="archive-filters" role="group" aria-label="Фильтр по годам">
+    <button type="button" data-year-filter="all" aria-pressed="true">Все годы <span>{trips.length}</span></button>
+    {years.map((year) => (
+      <button type="button" data-year-filter={year} aria-pressed="false">
+        {year} <span>{tripsByYear.get(year)!.length}</span>
+      </button>
+    ))}
+  </div>
+  <p class="archive-status" data-archive-status aria-live="polite">
+    Показано {trips.length} из {trips.length} поездок
+  </p>
+
+  {years.map((year) => {
+    const yearTrips = tripsByYear.get(year)!;
+    return (
+      <section class="archive-year" data-archive-year data-year={year} aria-label={`Поездки ${year} года`}>
+        <div class="archive-year-heading">
+          <h3>{year}</h3>
+          <span>{yearTrips.length} {pluralize(yearTrips.length, 'поездка', 'поездки', 'поездок')}</span>
+        </div>
+        <div class="journey-grid">
+          {yearTrips.map((trip) => {
+            const notes = momentCount(trip);
+            return (
+              <article class="journey-card">
+                <a href={`/trips/${trip.id}/`} aria-label={`Открыть поездку: ${trip.data.title}`}>
+                  <div class="journey-image">
+                    <img src={trip.data.cover} alt={trip.data.coverAlt} width="1600" height="1200" loading="lazy" decoding="async" />
+                    <span class="journey-tag">{trip.data.country}</span>
+                    <span class="journey-open" aria-hidden="true">↗</span>
+                  </div>
+                  <div class="journey-body">
+                    <p class="journey-route">{trip.data.cities.map((city) => city.name).join(' → ')}</p>
+                    <h4>{trip.data.title}</h4>
+                    <p class="journey-summary">{trip.data.summary}</p>
+                    <div class="journey-meta">
+                      <span>{formatDateRange(trip.data.startDate, trip.data.endDate)}</span>
+                      <span>{notes} {pluralize(notes, 'заметка', 'заметки', 'заметок')}</span>
+                      <span class="journey-read">Читать <span aria-hidden="true">→</span></span>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    );
+  })}
+</section>
+
+<script>
+  const shelves = document.querySelectorAll<HTMLElement>('.journey-shelf');
+
+  shelves.forEach((shelf) => {
+    const filters = shelf.querySelectorAll<HTMLButtonElement>('[data-year-filter]');
+    const yearSections = shelf.querySelectorAll<HTMLElement>('[data-archive-year]');
+    const status = shelf.querySelector<HTMLElement>('[data-archive-status]');
+
+    filters.forEach((filterButton) => {
+      filterButton.addEventListener('click', () => {
+        const selectedYear = filterButton.dataset.yearFilter ?? 'all';
+        filters.forEach((button) => button.setAttribute('aria-pressed', String(button === filterButton)));
+        yearSections.forEach((section) => {
+          section.hidden = selectedYear !== 'all' && section.dataset.year !== selectedYear;
+        });
+
+        const visibleTrips = Array.from(yearSections)
+          .filter((section) => !section.hidden)
+          .reduce((total, section) => total + section.querySelectorAll('.journey-card').length, 0);
+        if (status) status.textContent = `Показано ${visibleTrips} из ${shelf.querySelectorAll('.journey-card').length} поездок`;
+      });
+    });
+  });
+</script>
