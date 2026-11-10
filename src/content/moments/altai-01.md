@@ -6,7 +6,7 @@ citySlug: chuysky-tract
 date: 2024-08-05
 tags: [природа]
 media:
-  - src: "/media/altai.jpg"
+  - src: "altai.jpg"
     alt: "Горы и зелёная долина Алтая"
     best: true
 ---

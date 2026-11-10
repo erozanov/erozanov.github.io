@@ -6,7 +6,7 @@ citySlug: princes-islands
 date: 2025-05-12
 tags: [еда, море]
 media:
-  - src: "/media/food.jpg"
+  - src: "food.jpg"
     alt: "Стол с несколькими блюдами у окна"
 ---
 

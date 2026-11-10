@@ -6,7 +6,7 @@ citySlug: sanya
 date: 2026-10-14
 tags: [море, закат]
 media:
-  - src: "/media/coast.jpg"
+  - src: "coast.jpg"
     alt: "Скалистый берег и бирюзовые волны"
     best: true
 ---

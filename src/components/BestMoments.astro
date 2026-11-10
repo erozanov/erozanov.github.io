@@ -2,6 +2,7 @@
 import type { CollectionEntry } from 'astro:content';
 import GalleryDialog from './GalleryDialog.astro';
 import type { GallerySlide } from './GalleryDialog.astro';
+import { mediaSrc } from '../utils/media';
 
 interface Props {
   trips: CollectionEntry<'trips'>[];
@@ -24,7 +25,7 @@ const slides: GallerySlide[] = moments
           date: moment.data.date,
           title: moment.data.title,
           bodyHtml: '',
-          media: [item],
+          media: [{ ...item, src: mediaSrc(item.src), poster: item.poster ? mediaSrc(item.poster) : undefined }],
         };
       }),
   )

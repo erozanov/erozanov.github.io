@@ -7,8 +7,8 @@ date: 2026-10-22
 tags: [море, вечер]
 media:
   - type: video
-    src: "/media/demo-clip.mp4"
-    poster: "/media/coast.jpg"
+    src: "demo-clip.mp4"
+    poster: "coast.jpg"
     alt: "Вид на побережье с высокой точки"
     best: true
 ---

@@ -2,6 +2,7 @@
 import { getEntry, render } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import { formatDate } from '../utils/dates';
+import { mediaSrc } from '../utils/media';
 import TravelMap from './TravelMap.astro';
 
 interface Props {
@@ -30,7 +31,7 @@ const place = trip?.data.cities.find((city) => city.slug === moment.data.citySlu
       <div class="moment-gallery">
         {videos.map((video, videoIndex) => (
           <div class="moment-gallery-item moment-gallery-video">
-            <video src={video.src} poster={video.poster} preload="metadata" controls></video>
+            <video src={mediaSrc(video.src)} poster={video.poster ? mediaSrc(video.poster) : undefined} preload="metadata" controls></video>
             <button
               type="button"
               class="moment-gallery-expand"
@@ -52,7 +53,7 @@ const place = trip?.data.cities.find((city) => city.slug === moment.data.citySlu
             data-media-index={videos.length + photoIndex}
             aria-label={`${moment.data.title}: открыть фото ${photoIndex + 1} из ${photos.length}`}
           >
-            <img src={photo.src} alt={photo.alt} width="1600" height="1200" loading="lazy" decoding="async" />
+            <img src={mediaSrc(photo.src)} alt={photo.alt} width="1600" height="1200" loading="lazy" decoding="async" />
             {hiddenCount > 0 && photoIndex === visiblePhotos.length - 1 && (
               <span class="moment-gallery-more" aria-hidden="true">+{hiddenCount}</span>
             )}

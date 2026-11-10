@@ -6,7 +6,7 @@ citySlug: ruskeala
 date: 2023-07-16
 tags: [природа]
 media:
-  - src: "/media/karelia.jpg"
+  - src: "karelia.jpg"
     alt: "Солнечный свет в сосновом лесу"
     best: true
 ---

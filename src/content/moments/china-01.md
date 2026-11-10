@@ -6,7 +6,7 @@ citySlug: sanya
 date: 2026-10-12
 tags: [море, утро]
 media:
-  - src: "/media/sanya.jpg"
+  - src: "sanya.jpg"
     alt: "Спокойное море и пляж в свете раннего утра"
 ---
 

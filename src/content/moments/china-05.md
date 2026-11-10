@@ -6,7 +6,7 @@ citySlug: shenzhen
 date: 2026-10-17
 tags: [архитектура, город]
 media:
-  - src: "/media/architecture.jpg"
+  - src: "architecture.jpg"
     alt: "Изогнутые фасады современных зданий"
 ---
 

@@ -6,7 +6,7 @@ citySlug: macau
 date: 2026-10-21
 tags: [еда]
 media:
-  - src: "/media/food.jpg"
+  - src: "food.jpg"
     alt: "Несколько блюд на общем столе"
 ---
 

@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# локальное зеркало медиа (бэкап, не для git)
+media-mirror/

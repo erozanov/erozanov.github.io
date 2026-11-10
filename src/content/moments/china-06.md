@@ -6,7 +6,7 @@ citySlug: hong-kong
 date: 2026-10-18
 tags: [город, вечер]
 media:
-  - src: "/media/hongkong.jpg"
+  - src: "hongkong.jpg"
     alt: "Ночная панорама Гонконга над бухтой"
     best: true
 ---

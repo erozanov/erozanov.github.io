@@ -8,8 +8,12 @@
  * Ожидает заметку, подготовленную по ранбуку PUBLISHING.md:
  * frontmatter со status: готово, trip, city, title, date + вложения рядом с заметкой.
  *
- * Окружение (для публикации медиа в R2 вместо репозитория):
- *   PUBLISH_TARGET=r2 R2_BUCKET=sledom-media R2_PUBLIC_URL=https://pub-xxx.r2.dev CLOUDFLARE_API_TOKEN=...
+ * Окружение:
+ *   PUBLISH_TARGET=r2 R2_BUCKET=sledom-media CLOUDFLARE_API_TOKEN=...
+ *     — медиа уходят в R2, в заметку пишется логический ключ без хоста.
+ *   MEDIA_MIRROR_PATH=/Volumes/synology/sledom-media
+ *     — после публикации зеркалировать копию всех медиа на внешний диск.
+ *   Хост для URL медиа задаётся при сборке сайта: MEDIA_BASE_URL.
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -19,8 +23,9 @@ const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '
 const config = {
   target: process.env.PUBLISH_TARGET ?? 'local', // local | r2
   r2Bucket: process.env.R2_BUCKET ?? 'sledom-media',
-  r2PublicUrl: (process.env.R2_PUBLIC_URL ?? '').replace(/\/$/, ''),
   localMediaDir: 'public/media',
+  mirrorDir: 'media-mirror', // резервная копия всех медиа (gitignore)
+  mirrorTarget: process.env.MEDIA_MIRROR_PATH ?? '', // например /Volumes/synology/sledom-media
   photosMaxSize: 2000,
 };
 
@@ -90,19 +95,19 @@ const dateCompact = fields.date.replaceAll('-', '');
 const media = [];
 attachments.forEach((att, index) => {
   const src = path.join(noteDir, att.file);
-  if (!existsSync(src)) fail(`Файл «${att.file}» не найран рядом с заметкой (${noteDir}).`);
+  if (!existsSync(src)) fail(`Файл «${att.file}» не найден рядом с заметкой (${noteDir}).`);
   const ext = path.extname(att.file).toLowerCase();
   const isVideo = ['.mp4', '.mov', '.webm'].includes(ext);
+  // Логический ключ — хост подставляется при сборке сайта (MEDIA_BASE_URL).
   const key = `${tripId}/${citySlug}/${fields.date}-${String(index + 1).padStart(2, '0')}${isVideo ? '.mp4' : ext}`;
-  let publicSrc;
+  const tmp = path.join('/tmp', `publish-${Date.now()}-${index}${ext}`);
+  let localCopy;
 
   if (config.target === 'r2') {
-    if (!config.r2PublicUrl) fail('Задан PUBLISH_TARGET=r2, но не задан R2_PUBLIC_URL.');
-    const tmp = path.join('/tmp', `publish-${Date.now()}-${index}${ext}`);
     if (isVideo) copyFileSync(src, tmp);
     else execFileSync('sips', ['-Z', String(config.photosMaxSize), src, '--out', tmp], { stdio: 'ignore' });
     execFileSync('npx', ['wrangler', 'r2', 'object', 'put', `${config.r2Bucket}/${key}`, '--file', tmp, '--remote'], { stdio: 'inherit' });
-    publicSrc = `${config.r2PublicUrl}/${key}`;
+    localCopy = tmp;
   } else {
     const dest = path.join(repoRoot, config.localMediaDir, key);
     mkdirSync(path.dirname(dest), { recursive: true });
@@ -112,15 +117,30 @@ attachments.forEach((att, index) => {
     } else {
       execFileSync('sips', ['-Z', String(config.photosMaxSize), src, '--out', dest], { stdio: 'ignore' });
     }
-    publicSrc = `/media/${key}`;
+    localCopy = dest;
   }
 
-  const item = { type: isVideo ? 'video' : 'photo', src: publicSrc, alt: att.alt };
+  // Всегда дублируем в локальное зеркало (бэкап + источник для Synology).
+  const mirrorDest = path.join(repoRoot, config.mirrorDir, key);
+  mkdirSync(path.dirname(mirrorDest), { recursive: true });
+  copyFileSync(localCopy, mirrorDest);
+
+  const item = { type: isVideo ? 'video' : 'photo', src: key, alt: att.alt };
   if (fields.best && path.basename(fields.best) === att.file) item.best = true;
-  if (isVideo) item.poster = undefined;
   media.push(item);
-  console.log(`✓ ${att.file} → ${publicSrc}`);
+  console.log(`✓ ${att.file} → ${key}`);
 });
+
+// --- Зеркало на внешний диск (Synology) ---
+
+if (config.mirrorTarget) {
+  try {
+    execFileSync('rsync', ['-a', `${path.join(repoRoot, config.mirrorDir)}/`, config.mirrorTarget.replace(/\/?$/, '/')], { stdio: 'inherit' });
+    console.log(`✓ Зеркалировано на внешний диск: ${config.mirrorTarget}`);
+  } catch {
+    console.warn('! Зеркалирование не удалось — проверьте MEDIA_MIRROR_PATH и доступность диска. Публикация продолжена.');
+  }
+}
 
 // --- Файл момента ---
 

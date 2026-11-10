@@ -6,7 +6,7 @@ citySlug: sanya
 date: 2026-10-13
 tags: [море]
 media:
-  - src: "/media/island.jpg"
+  - src: "island.jpg"
     alt: "Бирюзовая вода вокруг небольшого острова"
     best: true
 ---

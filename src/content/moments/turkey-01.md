@@ -6,7 +6,7 @@ citySlug: istanbul
 date: 2025-05-11
 tags: [город, архитектура]
 media:
-  - src: "/media/turkey.jpg"
+  - src: "turkey.jpg"
     alt: "Галатская башня и плотная городская застройка"
     best: true
 ---

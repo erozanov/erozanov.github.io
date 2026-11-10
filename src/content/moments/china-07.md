@@ -6,7 +6,7 @@ citySlug: hong-kong
 date: 2026-10-20
 tags: [город, вечер]
 media:
-  - src: "/media/night.jpg"
+  - src: "night.jpg"
     alt: "Неоновые огни на вечерней городской улице"
 ---
 

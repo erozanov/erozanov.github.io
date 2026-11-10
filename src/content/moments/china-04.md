@@ -6,7 +6,7 @@ citySlug: shenzhen
 date: 2026-10-15
 tags: [город]
 media:
-  - src: "/media/shenzhen.jpg"
+  - src: "shenzhen.jpg"
     alt: "Высотные здания Шэньчжэня в дневной дымке"
 ---
 

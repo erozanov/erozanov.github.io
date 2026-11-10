@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { calendarDays, dayKey, formatDate, formatDateRange, tripDuration } from '../utils/dates';
+import { mediaSrc } from '../utils/media';
 import GalleryDialog from './GalleryDialog.astro';
 
 interface Props {
@@ -24,7 +25,11 @@ const gallerySlides = slideDays.map(({ moment }, index) => ({
   date: moment.data.date,
   title: moment.data.title,
   bodyHtml: moment.rendered?.html ?? '',
-  media: moment.data.media,
+  media: moment.data.media.map((item) => ({
+    ...item,
+    src: mediaSrc(item.src),
+    poster: item.poster ? mediaSrc(item.poster) : undefined,
+  })),
 }));
 ---
 
@@ -80,10 +85,10 @@ const gallerySlides = slideDays.map(({ moment }, index) => ({
           >
             {cover?.type === 'video'
               ? cover.poster
-                ? <img src={cover.poster} alt="" width="1600" height="1200" loading="lazy" decoding="async" />
+                ? <img src={mediaSrc(cover.poster)} alt="" width="1600" height="1200" loading="lazy" decoding="async" />
                 : <span class="note-mark" aria-hidden="true">▶</span>
               : cover
-                ? <img src={cover.src} alt="" width="1600" height="1200" loading="lazy" decoding="async" />
+                ? <img src={mediaSrc(cover.src)} alt="" width="1600" height="1200" loading="lazy" decoding="async" />
                 : <span class="note-mark" aria-hidden="true">✎</span>}
             <span class="calendar-day-overlay"></span>
             <span class="calendar-day-number">{String(day.number).padStart(2, '0')}</span>
