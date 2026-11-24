@@ -1,0 +1,9 @@
+{
+  "id": "sledom-blog",
+  "name": "Следом Blog",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Публикация заметок о поездках из Obsidian прямо в блог. Создаёт и обновляет поездки одной кнопкой.",
+  "author": "erozanov",
+  "isDesktopOnly": true
+}
