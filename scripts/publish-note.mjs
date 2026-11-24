@@ -61,7 +61,13 @@ const [, fmRaw, bodyRaw] = match;
 const fields = {};
 for (const line of fmRaw.split('\n')) {
   const m = line.match(/^([\w-]+):\s*(.*)$/);
-  if (m) fields[m[1].trim()] = m[2].trim();
+  if (m) {
+    let value = m[2].trim();
+    // Снимаем обрамляющие кавычки: number: "005" → 005
+    const quoted = value.match(/^(["'])(.*)\1$/);
+    if (quoted) value = quoted[2];
+    fields[m[1].trim()] = value;
+  }
 }
 
 if (fields.status !== 'готово') fail(`status: «${fields.status}», а нужен «готово».`);
@@ -254,7 +260,7 @@ if (mode === 'trip') {
         `  - name: "${c.name}"\n`
         + `    slug: "${c.slug}"\n`
         + `    tagline: "${c.tagline.replaceAll('"', "'")}"\n`
-        + `    image: "/${config.localMediaDir}/${c.imageKey}"\n`
+        + `    image: "/media/${c.imageKey}"\n`
         + `    imageAlt: "${c.imageAlt.replaceAll('"', "'")}"\n`
         + `    coordinates: { lat: ${c.lat}, lng: ${c.lng} }`,
     )
@@ -269,7 +275,7 @@ if (mode === 'trip') {
     + `startDate: ${fields.startDate}\n`
     + `endDate: ${fields.endDate}\n`
     + `summary: "${fields.summary.replaceAll('"', "'")}"\n`
-    + `cover: "/${config.localMediaDir}/${coverKey}"\n`
+    + `cover: "/media/${coverKey}"\n`
     + `coverAlt: "${fields.coverAlt.replaceAll('"', "'")}"\n`
     + `featured: ${featured}\n`
     + `status: published\n`
