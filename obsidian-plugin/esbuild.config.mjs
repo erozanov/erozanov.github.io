@@ -4,7 +4,7 @@ import builtins from 'builtin-modules';
 
 const dev = process.argv[2] === 'dev';
 
-esbuild.build({
+const options = {
   entryPoints: ['src/main.ts'],
   bundle: true,
   external: ['obsidian', 'electron', ...builtins],
@@ -14,7 +14,13 @@ esbuild.build({
   sourcemap: dev ? 'inline' : false,
   treeShaking: true,
   outfile: 'main.js',
-  watch: dev
-    ? { onRebuild: (err) => { if (!err) console.log('Rebuilt.'); } }
-    : undefined,
-});
+};
+
+if (dev) {
+  const ctx = await esbuild.context(options);
+  await ctx.watch();
+  console.log('Сборка в режиме наблюдения — пересборка при изменениях.');
+} else {
+  await esbuild.build(options);
+  console.log('Готово: main.js собран.');
+}
