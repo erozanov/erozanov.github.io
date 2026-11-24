@@ -9,6 +9,8 @@
     "dev": "astro dev",
     "check": "astro check",
     "build": "astro build && pagefind --site dist",
+    "build:plugin": "vite build --config obsidian-plugin/vite.config.mjs",
+    "sync:media": "node scripts/sync-media.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
