@@ -1,0 +1,20 @@
+name = "sledom-blog-bot"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+[[kv_namespaces]]
+binding = "BLOG_KV"
+id = "KV_NAMESPACE_ID"
+
+[vars]
+GITHUB_OWNER = "erozanov"
+GITHUB_REPO = "erozanov.github.io"
+GITHUB_BRANCH = "main"
+SITE_URL = "https://erozanov.github.io"
+TZ_OFFSET_HOURS = "4"
+
+# Секреты (задаются через `npx wrangler secret put <ИМЯ>`):
+#   TELEGRAM_BOT_TOKEN        — токен от @BotFather
+#   TELEGRAM_ALLOWED_USER_ID  — ваш числовой Telegram ID (@userinfobot)
+#   GITHUB_TOKEN              — fine-grained PAT (Contents: Read+Write на этот репозиторий)
+#   WEBHOOK_SECRET            — случайная строка для пути webhook
