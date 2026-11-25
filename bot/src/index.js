@@ -161,6 +161,10 @@ async function publish(env, chatId, { items, caption, messageDate }) {
   const media = [];
 
   try {
+    // ID момента вычисляем заранее — имена медиа строим от него,
+    // чтобы несколько постов в один день/город не сталкивались.
+    const momentId = await uniqueMomentId(env, ctx.trip, date);
+
     if (items.length > 0) await send(env, chatId, '⏳ Загружаю медиа…');
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -170,13 +174,12 @@ async function publish(env, chatId, { items, caption, messageDate }) {
       }
       const buffer = await downloadTgFile(env, file.file_path);
       const ext = item.kind === 'video' ? extFromPath(file.file_path, '.mp4') : '.jpg';
-      const key = `${ctx.trip}/${ctx.city.slug}/${date}-${String(i + 1).padStart(2, '0')}${ext}`;
+      const key = `${ctx.trip}/${ctx.city.slug}/${momentId}-${String(i + 1).padStart(2, '0')}${ext}`;
       await ghPutFile(env, `public/media/${key}`, bufToBase64(buffer),
         `Медиа: ${key}`, true);
       media.push({ type: item.kind, src: key, alt: title, best: best && i === 0 });
     }
 
-    const momentId = await uniqueMomentId(env, ctx.trip, date);
     const content = buildMoment({ title, ctx, date, tags, media, body });
     await ghPutFile(env, `src/content/moments/${momentId}.md`,
       bufToBase64(new TextEncoder().encode(content).buffer), `Момент: ${title} (${momentId})`, true);
