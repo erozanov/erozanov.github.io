@@ -4,7 +4,7 @@ compatibility_date = "2024-09-23"
 
 [[kv_namespaces]]
 binding = "BLOG_KV"
-id = "KV_NAMESPACE_ID"
+id = "b970290b9dc3446c9c86ed2b2b9f7d29"
 
 [vars]
 GITHUB_OWNER = "erozanov"
